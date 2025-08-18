@@ -8,15 +8,11 @@ import (
 )
 
 type SummaryUseCase struct {
-	expenseRepo     ExpenseRepository
-	incomeRepo      IncomeRepository
 	transactionRepo TransactionRepository
 }
 
-func NewSummaryUseCase(expenseRepo ExpenseRepository, incomeRepo IncomeRepository, transactionRepo TransactionRepository) *SummaryUseCase {
+func NewSummaryUseCase(transactionRepo TransactionRepository) *SummaryUseCase {
 	return &SummaryUseCase{
-		expenseRepo:     expenseRepo,
-		incomeRepo:      incomeRepo,
 		transactionRepo: transactionRepo,
 	}
 }
@@ -25,12 +21,12 @@ func (uc *SummaryUseCase) GetMonthlySummary(ctx context.Context, year int, month
 	start := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
 	end := start.AddDate(0, 1, 0).Add(-time.Nanosecond)
 
-	totalIncome, err := uc.incomeRepo.GetTotalByDateRange(ctx, start, end)
+	totalIncome, err := uc.transactionRepo.GetTotalByDateRange(ctx, start, end, "income")
 	if err != nil {
 		return nil, err
 	}
 
-	totalExpense, err := uc.expenseRepo.GetTotalByDateRange(ctx, start, end)
+	totalExpense, err := uc.transactionRepo.GetTotalByDateRange(ctx, start, end, "expense")
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +43,7 @@ func (uc *SummaryUseCase) GetRecentTransactions(ctx context.Context, limit int) 
 }
 
 func (uc *SummaryUseCase) GetAllTransactions(ctx context.Context, offset, limit int) ([]*domain.Transaction, error) {
-	return uc.transactionRepo.GetAllTransactions(ctx, offset, limit)
+	return uc.transactionRepo.GetAll(ctx, offset, limit)
 }
 
 func (uc *SummaryUseCase) SearchTransactions(ctx context.Context, query string, offset, limit int) ([]*domain.Transaction, error) {

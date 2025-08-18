@@ -8,49 +8,36 @@ import (
 )
 
 const schema = `
-CREATE TABLE IF NOT EXISTS expense_categories (
+CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+    UNIQUE(name, type)
 );
 
-CREATE TABLE IF NOT EXISTS expenses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    description TEXT NOT NULL,
-    amount REAL NOT NULL,
-    date TEXT NOT NULL,
-    category_id INTEGER,
-    FOREIGN KEY(category_id) REFERENCES expense_categories(id)
-);
-
-CREATE TABLE IF NOT EXISTS income_categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
-);
-
-CREATE TABLE IF NOT EXISTS income (
+CREATE TABLE IF NOT EXISTS transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     description TEXT NOT NULL,
     amount REAL NOT NULL,
     date TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
     category_id INTEGER,
-    FOREIGN KEY(category_id) REFERENCES income_categories(id)
+    FOREIGN KEY(category_id) REFERENCES categories(id)
 );
 
-INSERT OR IGNORE INTO expense_categories (name) VALUES 
-    ('Food & Dining'),
-    ('Transportation'),
-    ('Shopping'),
-    ('Entertainment'),
-    ('Bills & Utilities'),
-    ('Healthcare'),
-    ('Other');
-
-INSERT OR IGNORE INTO income_categories (name) VALUES 
-    ('Salary'),
-    ('Freelance'),
-    ('Investment'),
-    ('Gift'),
-    ('Other');
+INSERT OR IGNORE INTO categories (name, type) VALUES 
+    ('Food & Dining', 'expense'),
+    ('Transportation', 'expense'),
+    ('Shopping', 'expense'),
+    ('Entertainment', 'expense'),
+    ('Bills & Utilities', 'expense'),
+    ('Healthcare', 'expense'),
+    ('Other', 'expense'),
+    ('Salary', 'income'),
+    ('Freelance', 'income'),
+    ('Investment', 'income'),
+    ('Gift', 'income'),
+    ('Other', 'income');
 `
 
 type Database struct {

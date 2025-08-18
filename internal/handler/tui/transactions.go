@@ -201,10 +201,15 @@ func (m *TransactionsModel) renderTransactionTable() string {
 	b.WriteString(strings.Repeat("─", 70) + "\n")
 
 	for _, transaction := range m.transactions {
+		categoryName := "Unknown"
+		if transaction.Category != nil {
+			categoryName = transaction.Category.Name
+		}
+		
 		line := fmt.Sprintf("%-12s %-20s %-15s %-10s %10s",
 			transaction.Date.Format("Jan 02, 2006"),
 			m.truncateString(transaction.Description, 20),
-			m.truncateString(transaction.Category, 15),
+			m.truncateString(categoryName, 15),
 			m.formatTransactionType(transaction.Type),
 			fmt.Sprintf("$%.2f", transaction.Amount),
 		)

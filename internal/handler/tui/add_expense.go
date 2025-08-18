@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
 	"expense-tracker/internal/core/domain"
 	"expense-tracker/internal/core/usecase"
+
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type expenseCategoriesMsg struct {
@@ -24,7 +25,7 @@ type expenseSubmissionMsg struct {
 }
 
 type AddExpenseModel struct {
-	expenseUseCase   *usecase.ExpenseUseCase
+	expenseUseCase   *usecase.TransactionUseCase
 	categories       []*domain.Category
 	inputs           []textinput.Model
 	focused          int
@@ -42,9 +43,9 @@ const (
 	expenseDateInput
 )
 
-func NewAddExpenseModel(expenseUseCase *usecase.ExpenseUseCase) *AddExpenseModel {
+func NewAddExpenseModel(transactionUseCase *usecase.TransactionUseCase) *AddExpenseModel {
 	m := &AddExpenseModel{
-		expenseUseCase: expenseUseCase,
+		expenseUseCase: transactionUseCase,
 		inputs:         make([]textinput.Model, 3),
 	}
 
@@ -84,7 +85,7 @@ func (m *AddExpenseModel) Reset() {
 func (m *AddExpenseModel) fetchCategories() tea.Cmd {
 	return tea.Cmd(func() tea.Msg {
 		ctx := context.Background()
-		categories, err := m.expenseUseCase.GetExpenseCategories(ctx)
+		categories, err := m.expenseUseCase.GetCategories(ctx, "expense")
 		return expenseCategoriesMsg{categories: categories, err: err}
 	})
 }
@@ -114,9 +115,15 @@ func (m *AddExpenseModel) submitExpense() tea.Cmd {
 			return expenseSubmissionMsg{err: fmt.Errorf("no categories available")}
 		}
 
-		categoryID := m.categories[m.selectedCategory].ID
+		transaction := &domain.Transaction{
+			Description: m.inputs[expenseDescriptionInput].Value(),
+			Amount:      amount,
+			Date:        date,
+			Type:        "expense",
+			Category:    m.categories[m.selectedCategory],
+		}
 
-		err = m.expenseUseCase.AddExpense(ctx, m.inputs[expenseDescriptionInput].Value(), amount, date, categoryID)
+		err = m.expenseUseCase.AddTransaction(ctx, transaction)
 		if err != nil {
 			return expenseSubmissionMsg{err: err}
 		}
@@ -261,7 +268,7 @@ func (m *AddExpenseModel) renderCategorySelection() string {
 	if len(m.categories) == 0 {
 		return "Loading categories..."
 	}
-	
+
 	selectedCategoryName := m.categories[m.selectedCategory].Name
 	if m.showCategories {
 		return focusedInputStyle.Render(selectedCategoryName)

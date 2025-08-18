@@ -24,16 +24,16 @@ type incomeSubmissionMsg struct {
 }
 
 type AddIncomeModel struct {
-	incomeUseCase    *usecase.IncomeUseCase
-	categories       []*domain.Category
-	inputs           []textinput.Model
-	focused          int
-	selectedCategory int
-	showCategories   bool
-	loading          bool
-	err              error
-	successMsg       string
-	shouldReturn     bool
+	transactionUseCase *usecase.TransactionUseCase
+	categories         []*domain.Category
+	inputs             []textinput.Model
+	focused            int
+	selectedCategory   int
+	showCategories     bool
+	loading            bool
+	err                error
+	successMsg         string
+	shouldReturn       bool
 }
 
 const (
@@ -42,10 +42,10 @@ const (
 	incomeDateInput
 )
 
-func NewAddIncomeModel(incomeUseCase *usecase.IncomeUseCase) *AddIncomeModel {
+func NewAddIncomeModel(transactionUseCase *usecase.TransactionUseCase) *AddIncomeModel {
 	m := &AddIncomeModel{
-		incomeUseCase: incomeUseCase,
-		inputs:        make([]textinput.Model, 3),
+		transactionUseCase: transactionUseCase,
+		inputs:             make([]textinput.Model, 3),
 	}
 
 	m.inputs[incomeDescriptionInput] = textinput.New()
@@ -84,7 +84,7 @@ func (m *AddIncomeModel) Reset() {
 func (m *AddIncomeModel) fetchCategories() tea.Cmd {
 	return tea.Cmd(func() tea.Msg {
 		ctx := context.Background()
-		categories, err := m.incomeUseCase.GetIncomeCategories(ctx)
+		categories, err := m.transactionUseCase.GetCategories(ctx, "income")
 		return incomeCategoriesMsg{categories: categories, err: err}
 	})
 }
@@ -114,9 +114,15 @@ func (m *AddIncomeModel) submitIncome() tea.Cmd {
 			return incomeSubmissionMsg{err: fmt.Errorf("no categories available")}
 		}
 
-		categoryID := m.categories[m.selectedCategory].ID
+		transaction := &domain.Transaction{
+			Description: m.inputs[incomeDescriptionInput].Value(),
+			Amount:      amount,
+			Date:        date,
+			Type:        "income",
+			Category:    m.categories[m.selectedCategory],
+		}
 
-		err = m.incomeUseCase.AddIncome(ctx, m.inputs[incomeDescriptionInput].Value(), amount, date, categoryID)
+		err = m.transactionUseCase.AddTransaction(ctx, transaction)
 		if err != nil {
 			return incomeSubmissionMsg{err: err}
 		}

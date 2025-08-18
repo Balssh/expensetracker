@@ -1,8 +1,9 @@
 package tui
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
 	"expense-tracker/internal/core/usecase"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type sessionState int
@@ -15,33 +16,30 @@ const (
 )
 
 type Model struct {
-	state             sessionState
-	width             int
-	height            int
-	expenseUseCase    *usecase.ExpenseUseCase
-	incomeUseCase     *usecase.IncomeUseCase
-	summaryUseCase    *usecase.SummaryUseCase
-	dashboardModel    *DashboardModel
-	addExpenseModel   *AddExpenseModel
-	addIncomeModel    *AddIncomeModel
-	transactionsModel *TransactionsModel
+	state              sessionState
+	width              int
+	height             int
+	transactionUseCase *usecase.TransactionUseCase
+	summaryUseCase     *usecase.SummaryUseCase
+	dashboardModel     *DashboardModel
+	addExpenseModel    *AddExpenseModel
+	addIncomeModel     *AddIncomeModel
+	transactionsModel  *TransactionsModel
 }
 
 func NewModel(
-	expenseUseCase *usecase.ExpenseUseCase,
-	incomeUseCase *usecase.IncomeUseCase,
+	transactionUseCase *usecase.TransactionUseCase,
 	summaryUseCase *usecase.SummaryUseCase,
 ) *Model {
 	m := &Model{
-		state:          dashboardView,
-		expenseUseCase: expenseUseCase,
-		incomeUseCase:  incomeUseCase,
-		summaryUseCase: summaryUseCase,
+		state:              dashboardView,
+		transactionUseCase: transactionUseCase,
+		summaryUseCase:     summaryUseCase,
 	}
 
 	m.dashboardModel = NewDashboardModel(summaryUseCase)
-	m.addExpenseModel = NewAddExpenseModel(expenseUseCase)
-	m.addIncomeModel = NewAddIncomeModel(incomeUseCase)
+	m.addExpenseModel = NewAddExpenseModel(transactionUseCase)
+	m.addIncomeModel = NewAddIncomeModel(transactionUseCase)
 	m.transactionsModel = NewTransactionsModel(summaryUseCase)
 
 	return m

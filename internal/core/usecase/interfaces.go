@@ -7,37 +7,21 @@ import (
 	"expense-tracker/internal/core/domain"
 )
 
-type ExpenseRepository interface {
-	Create(ctx context.Context, expense *domain.Expense) error
-	GetByID(ctx context.Context, id int) (*domain.Expense, error)
-	GetAll(ctx context.Context, offset, limit int) ([]*domain.Expense, error)
-	GetByDateRange(ctx context.Context, start, end time.Time) ([]*domain.Expense, error)
-	GetTotalByDateRange(ctx context.Context, start, end time.Time) (float64, error)
-	Update(ctx context.Context, expense *domain.Expense) error
-	Delete(ctx context.Context, id int) error
-}
-
-type IncomeRepository interface {
-	Create(ctx context.Context, income *domain.Income) error
-	GetByID(ctx context.Context, id int) (*domain.Income, error)
-	GetAll(ctx context.Context, offset, limit int) ([]*domain.Income, error)
-	GetByDateRange(ctx context.Context, start, end time.Time) ([]*domain.Income, error)
-	GetTotalByDateRange(ctx context.Context, start, end time.Time) (float64, error)
-	Update(ctx context.Context, income *domain.Income) error
+type TransactionRepository interface {
+	Create(ctx context.Context, transaction *domain.Transaction) error
+	GetByID(ctx context.Context, id int) (*domain.Transaction, error)
+	GetAll(ctx context.Context, offset, limit int) ([]*domain.Transaction, error)
+	GetByDateRange(ctx context.Context, start, end time.Time) ([]*domain.Transaction, error)
+	GetByType(ctx context.Context, transactionType string, offset, limit int) ([]*domain.Transaction, error)
+	GetTotalByDateRange(ctx context.Context, start, end time.Time, transactionType string) (float64, error)
+	GetRecentTransactions(ctx context.Context, limit int) ([]*domain.Transaction, error)
+	SearchTransactions(ctx context.Context, query string, offset, limit int) ([]*domain.Transaction, error)
+	Update(ctx context.Context, transaction *domain.Transaction) error
 	Delete(ctx context.Context, id int) error
 }
 
 type CategoryRepository interface {
-	CreateExpenseCategory(ctx context.Context, category *domain.Category) error
-	CreateIncomeCategory(ctx context.Context, category *domain.Category) error
-	GetExpenseCategories(ctx context.Context) ([]*domain.Category, error)
-	GetIncomeCategories(ctx context.Context) ([]*domain.Category, error)
-	GetExpenseCategoryByID(ctx context.Context, id int) (*domain.Category, error)
-	GetIncomeCategoryByID(ctx context.Context, id int) (*domain.Category, error)
-}
-
-type TransactionRepository interface {
-	GetRecentTransactions(ctx context.Context, limit int) ([]*domain.Transaction, error)
-	GetAllTransactions(ctx context.Context, offset, limit int) ([]*domain.Transaction, error)
-	SearchTransactions(ctx context.Context, query string, offset, limit int) ([]*domain.Transaction, error)
+	CreateCategory(ctx context.Context, category *domain.Category, categoryType string) error
+	GetCategories(ctx context.Context, categoryType string) ([]*domain.Category, error)
+	GetCategoryByID(ctx context.Context, id int, categoryType string) (*domain.Category, error)
 }
