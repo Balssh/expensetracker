@@ -18,7 +18,13 @@ func main() {
 		log.Fatalf("Failed to get user home directory: %v", err)
 	}
 
-	db, err := sqlite.NewDatabase(homeDir + "/.local/share/expensetracker/expense_tracker.db")
+	// Ensure the database directory exists
+	dbDir := homeDir + "/.local/share/expensetracker"
+	if err := os.MkdirAll(dbDir, 0755); err != nil {
+		log.Fatalf("Failed to create database directory: %v", err)
+	}
+
+	db, err := sqlite.NewDatabase(dbDir + "/expense_tracker.db")
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
