@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
 	"expense-tracker/internal/core/domain"
 	"expense-tracker/internal/core/usecase"
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type transactionsMsg struct {
@@ -30,7 +30,7 @@ type TransactionsModel struct {
 func NewTransactionsModel(summaryUseCase *usecase.SummaryUseCase) *TransactionsModel {
 	searchInput := textinput.New()
 	searchInput.Placeholder = "Search transactions..."
-	
+
 	return &TransactionsModel{
 		summaryUseCase: summaryUseCase,
 		searchInput:    searchInput,
@@ -47,25 +47,25 @@ func (m *TransactionsModel) Init() tea.Cmd {
 func (m *TransactionsModel) fetchTransactions() tea.Cmd {
 	return tea.Cmd(func() tea.Msg {
 		ctx := context.Background()
-		
+
 		var transactions []*domain.Transaction
 		var err error
-		
+
 		if m.searchInput.Value() != "" {
 			transactions, err = m.summaryUseCase.SearchTransactions(
-				ctx, 
-				m.searchInput.Value(), 
-				m.currentPage*m.itemsPerPage, 
+				ctx,
+				m.searchInput.Value(),
+				m.currentPage*m.itemsPerPage,
 				m.itemsPerPage,
 			)
 		} else {
 			transactions, err = m.summaryUseCase.GetAllTransactions(
-				ctx, 
-				m.currentPage*m.itemsPerPage, 
+				ctx,
+				m.currentPage*m.itemsPerPage,
 				m.itemsPerPage,
 			)
 		}
-		
+
 		return transactionsMsg{transactions: transactions, err: err}
 	})
 }
@@ -174,7 +174,7 @@ func (m *TransactionsModel) View() string {
 	}
 
 	b.WriteString("\n")
-	
+
 	helpText := "Controls: (/) Search • (c) Clear Search"
 	if !m.isSearching {
 		if m.currentPage > 0 {
@@ -185,7 +185,7 @@ func (m *TransactionsModel) View() string {
 		}
 	}
 	helpText += " • (q) Back"
-	
+
 	b.WriteString(helpStyle.Render(helpText))
 
 	return b.String()
@@ -205,7 +205,7 @@ func (m *TransactionsModel) renderTransactionTable() string {
 		if transaction.Category != nil {
 			categoryName = transaction.Category.Name
 		}
-		
+
 		line := fmt.Sprintf("%-12s %-20s %-15s %-10s %10s",
 			transaction.Date.Format("Jan 02, 2006"),
 			m.truncateString(transaction.Description, 20),

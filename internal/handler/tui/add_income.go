@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
 	"expense-tracker/internal/core/domain"
 	"expense-tracker/internal/core/usecase"
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type incomeCategoriesMsg struct {
@@ -267,7 +267,7 @@ func (m *AddIncomeModel) renderCategorySelection() string {
 	if len(m.categories) == 0 {
 		return "Loading categories..."
 	}
-	
+
 	selectedCategoryName := m.categories[m.selectedCategory].Name
 	if m.showCategories {
 		return focusedInputStyle.Render(selectedCategoryName)

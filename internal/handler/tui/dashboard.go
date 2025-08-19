@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"expense-tracker/internal/core/domain"
 	"expense-tracker/internal/core/usecase"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type summaryMsg struct {
@@ -45,7 +45,7 @@ func (m *DashboardModel) fetchData() tea.Cmd {
 	return tea.Cmd(func() tea.Msg {
 		ctx := context.Background()
 		now := time.Now()
-		
+
 		summary, err := m.summaryUseCase.GetMonthlySummary(ctx, now.Year(), now.Month())
 		if err != nil {
 			return summaryMsg{err: err}
@@ -85,7 +85,7 @@ func (m *DashboardModel) View() string {
 	}
 
 	if m.err != nil {
-		return titleStyle.Render("Expense Tracker") + "\n\n" + 
+		return titleStyle.Render("Expense Tracker") + "\n\n" +
 			errorStyle.Render("Error: "+m.err.Error())
 	}
 
@@ -118,9 +118,14 @@ func (m *DashboardModel) View() string {
 		b.WriteString("No transactions found.\n")
 	} else {
 		for _, transaction := range m.transactions {
+			categoryName := "Uncategorized"
+			if transaction.Category != nil {
+				categoryName = transaction.Category.Name
+			}
+
 			line := fmt.Sprintf("%-20s %-12s %8s $%.2f",
 				transaction.Date.Format("Jan 02"),
-				transaction.Category,
+				categoryName,
 				m.formatTransactionType(transaction.Type),
 				transaction.Amount,
 			)

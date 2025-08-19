@@ -1,0 +1,8 @@
+with-expecter: true
+dir: "test/mocks"
+outpkg: mocks
+packages:
+  expense-tracker/internal/core/usecase:
+    interfaces:
+      TransactionRepository:
+      CategoryRepository:
