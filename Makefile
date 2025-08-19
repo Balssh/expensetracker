@@ -83,7 +83,7 @@ dev-deps:
 
 # Clean generated files
 clean:
-	rm -f expense-tracker coverage.out coverage.html
+	rm -f expense-tracker app coverage.out coverage.html
 	rm -rf test/mocks/*
 	rm -rf bin/
 

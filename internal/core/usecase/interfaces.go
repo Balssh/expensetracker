@@ -18,6 +18,11 @@ type TransactionRepository interface {
 	SearchTransactions(ctx context.Context, query string, offset, limit int) ([]*domain.Transaction, error)
 	Update(ctx context.Context, transaction *domain.Transaction) error
 	Delete(ctx context.Context, id int) error
+	
+	// Enhanced analytics methods
+	GetCategoryTotalsByDateRange(ctx context.Context, start, end time.Time, transactionType string) ([]*domain.CategoryBreakdown, error)
+	GetTransactionCountByDateRange(ctx context.Context, start, end time.Time, transactionType string) (int, error)
+	GetCategoryTransactionCount(ctx context.Context, start, end time.Time, categoryID int, transactionType string) (int, error)
 }
 
 type CategoryRepository interface {

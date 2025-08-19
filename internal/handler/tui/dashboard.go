@@ -44,9 +44,9 @@ func (m *DashboardModel) Refresh() tea.Cmd {
 func (m *DashboardModel) fetchData() tea.Cmd {
 	return tea.Cmd(func() tea.Msg {
 		ctx := context.Background()
-		now := time.Now()
 
-		summary, err := m.summaryUseCase.GetMonthlySummary(ctx, now.Year(), now.Month())
+		// Use the enhanced summary system with intelligent defaults (current month)
+		summary, err := m.summaryUseCase.GetSummary(ctx)
 		if err != nil {
 			return summaryMsg{err: err}
 		}

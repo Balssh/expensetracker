@@ -280,3 +280,119 @@ func (r *TransactionRepository) scanTransactions(rows *sql.Rows) ([]*domain.Tran
 
 	return transactions, nil
 }
+
+// GetCategoryTotalsByDateRange returns category breakdowns for the given date range and transaction type
+func (r *TransactionRepository) GetCategoryTotalsByDateRange(ctx context.Context, start, end time.Time, transactionType string) ([]*domain.CategoryBreakdown, error) {
+	query := `
+		SELECT 
+			c.id, 
+			c.name, 
+			COALESCE(SUM(t.amount), 0) as total_amount,
+			COUNT(t.id) as transaction_count
+		FROM categories c
+		LEFT JOIN transactions t ON c.id = t.category_id 
+			AND t.date BETWEEN ? AND ? 
+			AND t.type = ?
+		WHERE c.type = ?
+		GROUP BY c.id, c.name
+		HAVING total_amount > 0
+		ORDER BY total_amount DESC
+	`
+
+	rows, err := r.db.DB().QueryContext(ctx, query, 
+		start.Format(time.RFC3339), 
+		end.Format(time.RFC3339), 
+		transactionType,
+		transactionType,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get category totals by date range: %w", err)
+	}
+	defer rows.Close()
+
+	var breakdowns []*domain.CategoryBreakdown
+	for rows.Next() {
+		var categoryID int
+		var categoryName string
+		var totalAmount float64
+		var transactionCount int
+
+		err := rows.Scan(&categoryID, &categoryName, &totalAmount, &transactionCount)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan category breakdown: %w", err)
+		}
+
+		category := &domain.Category{
+			ID:   categoryID,
+			Name: categoryName,
+		}
+
+		breakdown := &domain.CategoryBreakdown{
+			Category:         category,
+			TotalAmount:      totalAmount,
+			TransactionCount: transactionCount,
+		}
+
+		breakdowns = append(breakdowns, breakdown)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate category breakdown rows: %w", err)
+	}
+
+	return breakdowns, nil
+}
+
+// GetTransactionCountByDateRange returns the count of transactions for the given date range and type
+func (r *TransactionRepository) GetTransactionCountByDateRange(ctx context.Context, start, end time.Time, transactionType string) (int, error) {
+	var query string
+	var args []interface{}
+
+	if transactionType == "" {
+		// Count all transactions regardless of type
+		query = `
+			SELECT COUNT(*)
+			FROM transactions
+			WHERE date BETWEEN ? AND ?
+		`
+		args = []interface{}{start.Format(time.RFC3339), end.Format(time.RFC3339)}
+	} else {
+		// Count transactions of specific type
+		query = `
+			SELECT COUNT(*)
+			FROM transactions
+			WHERE date BETWEEN ? AND ? AND type = ?
+		`
+		args = []interface{}{start.Format(time.RFC3339), end.Format(time.RFC3339), transactionType}
+	}
+
+	var count int
+	err := r.db.DB().QueryRowContext(ctx, query, args...).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get transaction count by date range: %w", err)
+	}
+
+	return count, nil
+}
+
+// GetCategoryTransactionCount returns the count of transactions for a specific category, date range, and type
+func (r *TransactionRepository) GetCategoryTransactionCount(ctx context.Context, start, end time.Time, categoryID int, transactionType string) (int, error) {
+	query := `
+		SELECT COUNT(*)
+		FROM transactions
+		WHERE date BETWEEN ? AND ? AND category_id = ? AND type = ?
+	`
+
+	var count int
+	err := r.db.DB().QueryRowContext(ctx, query, 
+		start.Format(time.RFC3339), 
+		end.Format(time.RFC3339), 
+		categoryID, 
+		transactionType,
+	).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get category transaction count: %w", err)
+	}
+
+	return count, nil
+}

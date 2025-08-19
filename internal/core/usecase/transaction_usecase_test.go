@@ -33,9 +33,29 @@ func TestTransactionUseCaseSuite(t *testing.T) {
 	suite.Run(t, new(TransactionUseCaseTestSuite))
 }
 
-// TODO(human): Implement TestAddTransaction_Success test method
 func (suite *TransactionUseCaseTestSuite) TestAddTransaction_Success() {
-	// Test implementation needed here
+	assert := assert.New(suite.T())
+
+	transaction := &domain.Transaction{
+		Description: "Test valid transaction",
+		Amount:      100,
+		Type:        "expense",
+		Date:        time.Now(),
+		Category:    &domain.Category{ID: 1},
+	}
+
+	// Mock category lookup
+	expectedCategory := &domain.Category{ID: 1, Name: "Food"}
+	suite.categoryRepo.On("GetCategoryByID", suite.ctx, 1, "expense").Return(expectedCategory, nil)
+
+	// Mock transaction creation
+	suite.transactionRepo.On("Create", suite.ctx, transaction).Return(nil)
+
+	err := suite.useCase.AddTransaction(suite.ctx, transaction)
+
+	assert.NoError(err)
+	suite.transactionRepo.AssertExpectations(suite.T())
+	suite.categoryRepo.AssertExpectations(suite.T())
 }
 
 func (suite *TransactionUseCaseTestSuite) TestAddTransaction_InvalidAmount() {

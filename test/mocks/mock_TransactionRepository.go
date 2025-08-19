@@ -358,6 +358,127 @@ func (_c *MockTransactionRepository_GetByType_Call) RunAndReturn(run func(contex
 	return _c
 }
 
+// GetCategoryTotalsByDateRange provides a mock function with given fields: ctx, start, end, transactionType
+func (_m *MockTransactionRepository) GetCategoryTotalsByDateRange(ctx context.Context, start time.Time, end time.Time, transactionType string) ([]*domain.CategoryBreakdown, error) {
+	ret := _m.Called(ctx, start, end, transactionType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCategoryTotalsByDateRange")
+	}
+
+	var r0 []*domain.CategoryBreakdown
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, time.Time, time.Time, string) ([]*domain.CategoryBreakdown, error)); ok {
+		return rf(ctx, start, end, transactionType)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, time.Time, time.Time, string) []*domain.CategoryBreakdown); ok {
+		r0 = rf(ctx, start, end, transactionType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*domain.CategoryBreakdown)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, time.Time, time.Time, string) error); ok {
+		r1 = rf(ctx, start, end, transactionType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockTransactionRepository_GetCategoryTotalsByDateRange_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCategoryTotalsByDateRange'
+type MockTransactionRepository_GetCategoryTotalsByDateRange_Call struct {
+	*mock.Call
+}
+
+// GetCategoryTotalsByDateRange is a helper method to define mock.On call
+//   - ctx context.Context
+//   - start time.Time
+//   - end time.Time
+//   - transactionType string
+func (_e *MockTransactionRepository_Expecter) GetCategoryTotalsByDateRange(ctx interface{}, start interface{}, end interface{}, transactionType interface{}) *MockTransactionRepository_GetCategoryTotalsByDateRange_Call {
+	return &MockTransactionRepository_GetCategoryTotalsByDateRange_Call{Call: _e.mock.On("GetCategoryTotalsByDateRange", ctx, start, end, transactionType)}
+}
+
+func (_c *MockTransactionRepository_GetCategoryTotalsByDateRange_Call) Run(run func(ctx context.Context, start time.Time, end time.Time, transactionType string)) *MockTransactionRepository_GetCategoryTotalsByDateRange_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(time.Time), args[2].(time.Time), args[3].(string))
+	})
+	return _c
+}
+
+func (_c *MockTransactionRepository_GetCategoryTotalsByDateRange_Call) Return(_a0 []*domain.CategoryBreakdown, _a1 error) *MockTransactionRepository_GetCategoryTotalsByDateRange_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockTransactionRepository_GetCategoryTotalsByDateRange_Call) RunAndReturn(run func(context.Context, time.Time, time.Time, string) ([]*domain.CategoryBreakdown, error)) *MockTransactionRepository_GetCategoryTotalsByDateRange_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetCategoryTransactionCount provides a mock function with given fields: ctx, start, end, categoryID, transactionType
+func (_m *MockTransactionRepository) GetCategoryTransactionCount(ctx context.Context, start time.Time, end time.Time, categoryID int, transactionType string) (int, error) {
+	ret := _m.Called(ctx, start, end, categoryID, transactionType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCategoryTransactionCount")
+	}
+
+	var r0 int
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, time.Time, time.Time, int, string) (int, error)); ok {
+		return rf(ctx, start, end, categoryID, transactionType)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, time.Time, time.Time, int, string) int); ok {
+		r0 = rf(ctx, start, end, categoryID, transactionType)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, time.Time, time.Time, int, string) error); ok {
+		r1 = rf(ctx, start, end, categoryID, transactionType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockTransactionRepository_GetCategoryTransactionCount_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCategoryTransactionCount'
+type MockTransactionRepository_GetCategoryTransactionCount_Call struct {
+	*mock.Call
+}
+
+// GetCategoryTransactionCount is a helper method to define mock.On call
+//   - ctx context.Context
+//   - start time.Time
+//   - end time.Time
+//   - categoryID int
+//   - transactionType string
+func (_e *MockTransactionRepository_Expecter) GetCategoryTransactionCount(ctx interface{}, start interface{}, end interface{}, categoryID interface{}, transactionType interface{}) *MockTransactionRepository_GetCategoryTransactionCount_Call {
+	return &MockTransactionRepository_GetCategoryTransactionCount_Call{Call: _e.mock.On("GetCategoryTransactionCount", ctx, start, end, categoryID, transactionType)}
+}
+
+func (_c *MockTransactionRepository_GetCategoryTransactionCount_Call) Run(run func(ctx context.Context, start time.Time, end time.Time, categoryID int, transactionType string)) *MockTransactionRepository_GetCategoryTransactionCount_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(time.Time), args[2].(time.Time), args[3].(int), args[4].(string))
+	})
+	return _c
+}
+
+func (_c *MockTransactionRepository_GetCategoryTransactionCount_Call) Return(_a0 int, _a1 error) *MockTransactionRepository_GetCategoryTransactionCount_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockTransactionRepository_GetCategoryTransactionCount_Call) RunAndReturn(run func(context.Context, time.Time, time.Time, int, string) (int, error)) *MockTransactionRepository_GetCategoryTransactionCount_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetRecentTransactions provides a mock function with given fields: ctx, limit
 func (_m *MockTransactionRepository) GetRecentTransactions(ctx context.Context, limit int) ([]*domain.Transaction, error) {
 	ret := _m.Called(ctx, limit)
@@ -472,6 +593,65 @@ func (_c *MockTransactionRepository_GetTotalByDateRange_Call) Return(_a0 float64
 }
 
 func (_c *MockTransactionRepository_GetTotalByDateRange_Call) RunAndReturn(run func(context.Context, time.Time, time.Time, string) (float64, error)) *MockTransactionRepository_GetTotalByDateRange_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTransactionCountByDateRange provides a mock function with given fields: ctx, start, end, transactionType
+func (_m *MockTransactionRepository) GetTransactionCountByDateRange(ctx context.Context, start time.Time, end time.Time, transactionType string) (int, error) {
+	ret := _m.Called(ctx, start, end, transactionType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTransactionCountByDateRange")
+	}
+
+	var r0 int
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, time.Time, time.Time, string) (int, error)); ok {
+		return rf(ctx, start, end, transactionType)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, time.Time, time.Time, string) int); ok {
+		r0 = rf(ctx, start, end, transactionType)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, time.Time, time.Time, string) error); ok {
+		r1 = rf(ctx, start, end, transactionType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockTransactionRepository_GetTransactionCountByDateRange_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactionCountByDateRange'
+type MockTransactionRepository_GetTransactionCountByDateRange_Call struct {
+	*mock.Call
+}
+
+// GetTransactionCountByDateRange is a helper method to define mock.On call
+//   - ctx context.Context
+//   - start time.Time
+//   - end time.Time
+//   - transactionType string
+func (_e *MockTransactionRepository_Expecter) GetTransactionCountByDateRange(ctx interface{}, start interface{}, end interface{}, transactionType interface{}) *MockTransactionRepository_GetTransactionCountByDateRange_Call {
+	return &MockTransactionRepository_GetTransactionCountByDateRange_Call{Call: _e.mock.On("GetTransactionCountByDateRange", ctx, start, end, transactionType)}
+}
+
+func (_c *MockTransactionRepository_GetTransactionCountByDateRange_Call) Run(run func(ctx context.Context, start time.Time, end time.Time, transactionType string)) *MockTransactionRepository_GetTransactionCountByDateRange_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(time.Time), args[2].(time.Time), args[3].(string))
+	})
+	return _c
+}
+
+func (_c *MockTransactionRepository_GetTransactionCountByDateRange_Call) Return(_a0 int, _a1 error) *MockTransactionRepository_GetTransactionCountByDateRange_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockTransactionRepository_GetTransactionCountByDateRange_Call) RunAndReturn(run func(context.Context, time.Time, time.Time, string) (int, error)) *MockTransactionRepository_GetTransactionCountByDateRange_Call {
 	_c.Call.Return(run)
 	return _c
 }
