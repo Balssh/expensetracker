@@ -258,7 +258,7 @@ func (m *AddIncomeModel) View() string {
 
 func (m *AddIncomeModel) renderInput(index int) string {
 	if m.focused == index && !m.showCategories {
-		return focusedInputStyle.Render(m.inputs[index].View())
+		return inputFocusedStyle.Render(m.inputs[index].View())
 	}
 	return inputStyle.Render(m.inputs[index].View())
 }
@@ -270,7 +270,7 @@ func (m *AddIncomeModel) renderCategorySelection() string {
 
 	selectedCategoryName := m.categories[m.selectedCategory].Name
 	if m.showCategories {
-		return focusedInputStyle.Render(selectedCategoryName)
+		return inputFocusedStyle.Render(selectedCategoryName)
 	}
 	return inputStyle.Render(selectedCategoryName)
 }

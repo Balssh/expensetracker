@@ -54,35 +54,54 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		
+		// Update dimensions for all models that need responsive layout
+		m.dashboardModel.SetDimensions(msg.Width, msg.Height)
+		m.transactionsModel.SetDimensions(msg.Width, msg.Height)
+		// TODO: Update form models when they get SetDimensions methods
+		
 		return m, nil
 
 	case tea.KeyMsg:
+		// Global navigation - works in all views
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c":
+			return m, tea.Quit
+			
+		case "q", "esc":
+			// Context-sensitive quit/back behavior
 			if m.state == dashboardView {
 				return m, tea.Quit
 			}
+			// Go back to dashboard from other views
 			m.state = dashboardView
 			return m, m.dashboardModel.Refresh()
+		}
 
-		case "a":
-			if m.state == dashboardView {
+		// Dashboard-specific navigation
+		if m.state == dashboardView {
+			switch msg.String() {
+			case "a":
 				m.state = addExpenseView
 				m.addExpenseModel.Reset()
 				return m, m.addExpenseModel.Init()
-			}
 
-		case "i":
-			if m.state == dashboardView {
+			case "i":
 				m.state = addIncomeView
 				m.addIncomeModel.Reset()
 				return m, m.addIncomeModel.Init()
-			}
 
-		case "l":
-			if m.state == dashboardView {
+			case "l":
 				m.state = listTransactionsView
 				return m, m.transactionsModel.Init()
+				
+			case "r":
+				// Refresh data
+				return m, m.dashboardModel.Refresh()
+				
+			case "?", "h":
+				// TODO: Show help modal in future iteration
+				return m, nil
 			}
 		}
 	}
