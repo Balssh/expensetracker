@@ -2,6 +2,7 @@
 
 # Run all tests
 test:
+	go run github.com/vektra/mockery/v2@latest --all
 	go test -v ./...
 
 # Run only unit tests (domain and use case layers)
@@ -58,7 +59,7 @@ check-all: fmt vet test-coverage
 
 # Build the application
 build:
-	go build -o expense-tracker cmd/app/main.go
+	go build -o bin/expense-tracker cmd/app/main.go
 
 # Build for multiple platforms
 build-all:
