@@ -146,28 +146,35 @@ func (m *TransactionsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *TransactionsModel) View() string {
+	config := NewCenterConfig(m.width, m.height)
+	
 	if m.loading {
-		centered := CenterHorizontally(loadingStyle.Render("Loading transactions..."), NewCenterConfig(m.width, m.height))
-		return CreateMainApplicationBorder(centered, NewCenterConfig(m.width, m.height))
+		content := loadingStyle.Render("Loading transactions...")
+		return lipgloss.Place(config.Width, config.Height, 
+			lipgloss.Center, lipgloss.Center, content)
 	}
 
-	// Create the three sections
+	// Create responsive panels
 	searchPanel := m.createSearchPanel()
 	transactionsPanel := m.createTransactionsPanel()
 	helpPanel := m.createTransactionsHelpPanel()
 
-	// Combine sections using the layout system
-	config := NewCenterConfig(m.width, m.height)
-	panelLayout := CreateThreePanelLayout(searchPanel, transactionsPanel, helpPanel, config)
-	
-	// Add the main title at the top
 	title := titleStyle.Render("📋 All Transactions")
 	
-	// Center everything horizontally
-	fullContent := title + "\n\n" + panelLayout
-	centered := CenterHorizontally(fullContent, config)
+	// Create layout without outer borders, help panel without border
+	fullContent := lipgloss.JoinVertical(
+		lipgloss.Center,
+		title,
+		"",
+		m.createPanelWithBorder(searchPanel, "🔍 Search & Filter", config),
+		"",
+		m.createPanelWithBorder(transactionsPanel, "📊 Transactions", config),
+		"",
+		helpPanel, // No border for help panel as requested
+	)
 	
-	return CreateMainApplicationBorder(centered, config)
+	return lipgloss.Place(config.Width, config.Height, 
+		lipgloss.Center, lipgloss.Center, fullContent)
 }
 
 // createSearchPanel creates the top panel with search functionality
@@ -263,39 +270,50 @@ func (m *TransactionsModel) createTransactionsHelpPanel() string {
 		helpTexts = append(helpTexts, helpKeyStyle.Render("q") + " Back")
 	}
 	
-	return navigationStyle.Render(strings.Join(helpTexts, " • "))
+	// No border styling - just return plain text
+	return strings.Join(helpTexts, " • ")
+}
+
+// createPanelWithBorder creates a bordered panel that scales with terminal size
+func (m *TransactionsModel) createPanelWithBorder(content, title string, config CenterConfig) string {
+	// Calculate consistent panel dimensions to match dashboard
+	panelWidth := config.CalculateContentWidth() - 4 // Account for border padding
+	panelHeight := (config.Height - 10) / 3 - 2 // Divide available height into 3 equal sections
+	
+	// Ensure minimum height
+	if panelHeight < 6 {
+		panelHeight = 6
+	}
+	
+	style := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(colorNeutral).
+		Width(panelWidth).
+		Height(panelHeight).
+		Padding(1, 2).
+		Align(lipgloss.Left)
+	
+	return style.Render(content)
 }
 
 // renderEnhancedTransactionTable creates a properly aligned transaction table
 func (m *TransactionsModel) renderEnhancedTransactionTable() string {
-	// Define responsive column widths based on terminal size
-	breakpoint := GetBreakpoint(m.width)
+	// Calculate table width to fill the entire panel container  
+	config := NewCenterConfig(m.width, m.height)
+	panelWidth := config.CalculateContentWidth() - 8 // Account for panel padding
 	
-	var columns []TableColumn
-	switch breakpoint {
-	case BreakpointNarrow:
-		columns = []TableColumn{
-			{Header: "Date", Width: 8, Alignment: lipgloss.Left},
-			{Header: "Description", Width: 18, Alignment: lipgloss.Left},
-			{Header: "Amount", Width: 10, Alignment: lipgloss.Right},
-		}
-	case BreakpointStandard:
-		columns = []TableColumn{
-			{Header: "Date", Width: 12, Alignment: lipgloss.Left},
-			{Header: "Category", Width: 15, Alignment: lipgloss.Left},
-			{Header: "Description", Width: 20, Alignment: lipgloss.Left},
-			{Header: "Type", Width: 8, Alignment: lipgloss.Left},
-			{Header: "Amount", Width: 12, Alignment: lipgloss.Right},
-		}
-	default: // BreakpointWide
-		columns = []TableColumn{
-			{Header: "Date", Width: 14, Alignment: lipgloss.Left},
-			{Header: "Category", Width: 18, Alignment: lipgloss.Left},
-			{Header: "Description", Width: 25, Alignment: lipgloss.Left},
-			{Header: "Type", Width: 10, Alignment: lipgloss.Left},
-			{Header: "Amount", Width: 15, Alignment: lipgloss.Right},
-		}
+	// Always use the same column layout, just scale widths proportionally
+	columns := []TableColumn{
+		{Header: "Date", Width: 12, Alignment: lipgloss.Left},
+		{Header: "Category", Width: panelWidth * 25 / 100, Alignment: lipgloss.Left},
+		{Header: "Description", Width: panelWidth * 50 / 100, Alignment: lipgloss.Left},  
+		{Header: "Amount", Width: panelWidth * 25 / 100, Alignment: lipgloss.Right},
 	}
+	
+	// Ensure minimum widths
+	if columns[1].Width < 12 { columns[1].Width = 12 }
+	if columns[2].Width < 15 { columns[2].Width = 15 }
+	if columns[3].Width < 10 { columns[3].Width = 10 }
 	
 	var b strings.Builder
 	
@@ -351,9 +369,8 @@ func (m *TransactionsModel) getTransactionRowValues(transaction *domain.Transact
 			values[i] = TruncateWithEllipsis(categoryName, col.Width)
 		case "Description":
 			values[i] = TruncateWithEllipsis(transaction.Description, col.Width)
-		case "Type":
-			values[i] = m.formatTransactionTypeColored(transaction.Type)
 		case "Amount":
+			// Color-coded amounts without separate Type column
 			values[i] = m.formatAmountColored(transaction.Amount, transaction.Type)
 		}
 	}
@@ -371,11 +388,10 @@ func (m *TransactionsModel) formatTransactionTypeColored(transactionType string)
 
 // formatAmountColored returns a colored amount based on transaction type
 func (m *TransactionsModel) formatAmountColored(amount float64, transactionType string) string {
-	formatted := fmt.Sprintf("$%.2f", amount)
 	if transactionType == "income" {
-		return incomeStyle.Render("+" + formatted)
+		return incomeStyle.Render(fmt.Sprintf("+$%.2f", amount))
 	}
-	return expenseStyle.Render("-" + formatted)
+	return expenseStyle.Render(fmt.Sprintf("-$%.2f", amount))
 }
 
 // renderPaginationInfo creates pagination information display

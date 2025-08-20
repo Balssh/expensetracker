@@ -229,7 +229,14 @@ func CreateTableHeader(columns []TableColumn) string {
 	}
 	
 	headerRow := FormatTableRow(columns, headers)
-	return tableHeaderStyle.Render(headerRow)
+	
+	// Apply style without padding that could cause wrapping
+	style := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(colorTextPrimary).
+		Background(colorPrimary)
+	
+	return style.Render(headerRow)
 }
 
 // CreateTableSeparator creates a table separator line

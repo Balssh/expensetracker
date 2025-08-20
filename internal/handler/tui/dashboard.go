@@ -83,35 +83,43 @@ func (m *DashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *DashboardModel) View() string {
+	// Use full terminal dimensions and auto-scale content
+	config := NewCenterConfig(m.width, m.height)
+	
 	if m.loading {
-		centered := CenterHorizontally(loadingStyle.Render("Loading expense tracker..."), NewCenterConfig(m.width, m.height))
-		return CreateMainApplicationBorder(centered, NewCenterConfig(m.width, m.height))
+		content := loadingStyle.Render("Loading expense tracker...")
+		return m.renderWithLayout(content, config)
 	}
 
 	if m.err != nil {
-		errorContent := titleStyle.Render("Expense Tracker") + "\n\n" +
+		content := titleStyle.Render("💰 Expense Tracker") + "\n\n" +
 			errorStyle.Render("Error: "+m.err.Error())
-		centered := CenterHorizontally(errorContent, NewCenterConfig(m.width, m.height))
-		return CreateMainApplicationBorder(centered, NewCenterConfig(m.width, m.height))
+		return m.renderWithLayout(content, config)
 	}
 
-	// Create the three panels
-	topPanel := m.createSummaryPanel()
-	middlePanel := m.createTransactionsPanel()
-	bottomPanel := m.createHelpPanel()
+	// Create responsive panels that auto-adjust to terminal size
+	summaryPanel := m.createSummaryPanel()
+	transactionsPanel := m.createTransactionsPanel()
+	helpPanel := m.createHelpPanel()
 
-	// Combine panels using the layout system
-	config := NewCenterConfig(m.width, m.height)
-	panelLayout := CreateThreePanelLayout(topPanel, middlePanel, bottomPanel, config)
-	
-	// Add the main title at the top
+	// Main title
 	title := titleStyle.Render("💰 Expense Tracker")
 	
-	// Center everything horizontally
-	fullContent := title + "\n\n" + panelLayout
-	centered := CenterHorizontally(fullContent, config)
+	// Create full layout using Lipgloss vertical join for better alignment
+	fullContent := lipgloss.JoinVertical(
+		lipgloss.Center,
+		title,
+		"",
+		m.createPanelWithBorder(summaryPanel, "📊 Summary", config),
+		"",
+		m.createPanelWithBorder(transactionsPanel, "📋 Recent Transactions", config),
+		"",
+		helpPanel, // No border for help panel as requested
+	)
 	
-	return CreateMainApplicationBorder(centered, config)
+	// Center the entire layout
+	return lipgloss.Place(config.Width, config.Height, 
+		lipgloss.Center, lipgloss.Center, fullContent)
 }
 
 // createSummaryPanel creates the top panel with monthly summary and expense breakdown
@@ -194,21 +202,34 @@ func (m *DashboardModel) createTransactionsPanel() string {
 		return b.String()
 	}
 	
-	// Create table with proper alignment
+	// Calculate table width to fill the entire panel container
+	config := NewCenterConfig(m.width, m.height)
+	panelWidth := config.CalculateContentWidth() - 8 // Account for panel padding
+	
 	columns := []TableColumn{
 		{Header: "Date", Width: 12, Alignment: lipgloss.Left},
-		{Header: "Category", Width: 15, Alignment: lipgloss.Left},
-		{Header: "Description", Width: 20, Alignment: lipgloss.Left},
-		{Header: "Type", Width: 8, Alignment: lipgloss.Left},
-		{Header: "Amount", Width: 10, Alignment: lipgloss.Right},
+		{Header: "Category", Width: panelWidth * 25 / 100, Alignment: lipgloss.Left},  
+		{Header: "Description", Width: panelWidth * 50 / 100, Alignment: lipgloss.Left},
+		{Header: "Amount", Width: panelWidth * 25 / 100, Alignment: lipgloss.Right},
 	}
+	
+	// Ensure minimum widths and adjust if needed
+	if columns[1].Width < 12 { columns[1].Width = 12 }
+	if columns[2].Width < 15 { columns[2].Width = 15 }
+	if columns[3].Width < 10 { columns[3].Width = 10 }
 	
 	// Table header
 	tableHeader := CreateTableHeader(columns)
 	b.WriteString(tableHeader + "\n")
 	
+	// Calculate separator width based on actual column widths
+	totalWidth := 0
+	for _, col := range columns {
+		totalWidth += col.Width + 1 // +1 for space between columns
+	}
+	
 	// Separator
-	b.WriteString(CreateTableSeparator(65) + "\n")
+	b.WriteString(CreateTableSeparator(totalWidth-1) + "\n")
 	
 	// Transaction rows
 	for _, transaction := range m.transactions {
@@ -217,12 +238,19 @@ func (m *DashboardModel) createTransactionsPanel() string {
 			categoryName = transaction.Category.Name
 		}
 		
+		// Format amount with color coding based on transaction type
+		var formattedAmount string
+		if transaction.Type == "income" {
+			formattedAmount = incomeStyle.Render(fmt.Sprintf("+$%.2f", transaction.Amount))
+		} else {
+			formattedAmount = expenseStyle.Render(fmt.Sprintf("-$%.2f", transaction.Amount))
+		}
+		
 		values := []string{
 			transaction.Date.Format("Jan 02"),
-			TruncateWithEllipsis(categoryName, 15),
-			TruncateWithEllipsis(transaction.Description, 20),
-			m.formatTransactionType(transaction.Type),
-			fmt.Sprintf("$%.2f", transaction.Amount),
+			TruncateWithEllipsis(categoryName, columns[1].Width),
+			TruncateWithEllipsis(transaction.Description, columns[2].Width),
+			formattedAmount,
 		}
 		
 		row := FormatTableRow(columns, values)
@@ -235,7 +263,36 @@ func (m *DashboardModel) createTransactionsPanel() string {
 // createHelpPanel creates the bottom panel with available keybindings
 func (m *DashboardModel) createHelpPanel() string {
 	helpText := m.createHelpText()
-	return navigationStyle.Render(helpText)
+	// Remove border styling as requested
+	return helpText
+}
+
+// renderWithLayout handles simple content with responsive centering
+func (m *DashboardModel) renderWithLayout(content string, config CenterConfig) string {
+	return lipgloss.Place(config.Width, config.Height, 
+		lipgloss.Center, lipgloss.Center, content)
+}
+
+// createPanelWithBorder creates a bordered panel that scales with terminal size
+func (m *DashboardModel) createPanelWithBorder(content, title string, config CenterConfig) string {
+	// Calculate consistent panel dimensions 
+	panelWidth := config.CalculateContentWidth() - 4 // Account for border padding
+	panelHeight := (config.Height - 10) / 3 - 2 // Divide available height into 3 equal sections
+	
+	// Ensure minimum height
+	if panelHeight < 6 {
+		panelHeight = 6
+	}
+	
+	style := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(colorNeutral).
+		Width(panelWidth).
+		Height(panelHeight).
+		Padding(1, 2).
+		Align(lipgloss.Left)
+	
+	return style.Render(content)
 }
 
 // createHelpText creates context-aware help text

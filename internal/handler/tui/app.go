@@ -22,8 +22,7 @@ type Model struct {
 	transactionUseCase *usecase.TransactionUseCase
 	summaryUseCase     *usecase.SummaryUseCase
 	dashboardModel     *DashboardModel
-	addExpenseModel    *AddExpenseModel
-	addIncomeModel     *AddIncomeModel
+	addTransactionModel *AddTransactionModel
 	transactionsModel  *TransactionsModel
 }
 
@@ -38,8 +37,8 @@ func NewModel(
 	}
 
 	m.dashboardModel = NewDashboardModel(summaryUseCase)
-	m.addExpenseModel = NewAddExpenseModel(transactionUseCase)
-	m.addIncomeModel = NewAddIncomeModel(transactionUseCase)
+	// Start with expense as default - will be reconfigured when needed
+	m.addTransactionModel = NewAddTransactionModel(transactionUseCase, TransactionTypeExpense)
 	m.transactionsModel = NewTransactionsModel(summaryUseCase)
 
 	return m
@@ -58,7 +57,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Update dimensions for all models that need responsive layout
 		m.dashboardModel.SetDimensions(msg.Width, msg.Height)
 		m.transactionsModel.SetDimensions(msg.Width, msg.Height)
-		// TODO: Update form models when they get SetDimensions methods
+		m.addTransactionModel.SetDimensions(msg.Width, msg.Height)
 		
 		return m, nil
 
@@ -82,14 +81,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.state == dashboardView {
 			switch msg.String() {
 			case "a":
+				// Configure for expense and switch to form
+				m.addTransactionModel = NewAddTransactionModel(m.transactionUseCase, TransactionTypeExpense)
+				m.addTransactionModel.SetDimensions(m.width, m.height)
 				m.state = addExpenseView
-				m.addExpenseModel.Reset()
-				return m, m.addExpenseModel.Init()
+				m.addTransactionModel.Reset()
+				return m, m.addTransactionModel.Init()
 
 			case "i":
+				// Configure for income and switch to form
+				m.addTransactionModel = NewAddTransactionModel(m.transactionUseCase, TransactionTypeIncome)
+				m.addTransactionModel.SetDimensions(m.width, m.height)
 				m.state = addIncomeView
-				m.addIncomeModel.Reset()
-				return m, m.addIncomeModel.Init()
+				m.addTransactionModel.Reset()
+				return m, m.addTransactionModel.Init()
 
 			case "l":
 				m.state = listTransactionsView
@@ -113,19 +118,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.dashboardModel = dashboardModel.(*DashboardModel)
 		return m, cmd
 
-	case addExpenseView:
-		addExpenseModel, cmd := m.addExpenseModel.Update(msg)
-		m.addExpenseModel = addExpenseModel.(*AddExpenseModel)
-		if m.addExpenseModel.shouldReturn {
-			m.state = dashboardView
-			return m, tea.Batch(cmd, m.dashboardModel.Refresh())
-		}
-		return m, cmd
-
-	case addIncomeView:
-		addIncomeModel, cmd := m.addIncomeModel.Update(msg)
-		m.addIncomeModel = addIncomeModel.(*AddIncomeModel)
-		if m.addIncomeModel.shouldReturn {
+	case addExpenseView, addIncomeView:
+		// Both expense and income use the same unified model
+		addTransactionModel, cmd := m.addTransactionModel.Update(msg)
+		m.addTransactionModel = addTransactionModel.(*AddTransactionModel)
+		if m.addTransactionModel.shouldReturn {
 			m.state = dashboardView
 			return m, tea.Batch(cmd, m.dashboardModel.Refresh())
 		}
@@ -144,10 +141,8 @@ func (m Model) View() string {
 	switch m.state {
 	case dashboardView:
 		return m.dashboardModel.View()
-	case addExpenseView:
-		return m.addExpenseModel.View()
-	case addIncomeView:
-		return m.addIncomeModel.View()
+	case addExpenseView, addIncomeView:
+		return m.addTransactionModel.View()
 	case listTransactionsView:
 		return m.transactionsModel.View()
 	default:
