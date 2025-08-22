@@ -385,11 +385,11 @@ func (m *AddTransactionModel) View() string {
 		helpContent,
 	)
 	
-	// If category selection is active, overlay the popup
+	// If category selection is active, show the popup
 	if m.currentMode == modeCategorySelect {
 		popup := m.createCategoryPopup()
-		// Overlay popup on top of the base content
-		return m.overlayPopup(baseContent, popup, config)
+		return lipgloss.Place(config.Width, config.Height, 
+			lipgloss.Center, lipgloss.Center, popup)
 	}
 	
 	return lipgloss.Place(config.Width, config.Height, 
@@ -542,115 +542,20 @@ func (m *AddTransactionModel) createCategoryPopup() string {
 	var b strings.Builder
 	
 	// Header
-	b.WriteString("Select Category\n\n")
+	header := modalHeaderStyle.Render("Select Category")
+	b.WriteString(header + "\n\n")
 	
-	// Category list (limit height to stay within borders)
-	maxCategories := 8 // Limit to keep popup reasonable size
-	startIdx := 0
-	endIdx := len(m.categories)
-	
-	if len(m.categories) > maxCategories {
-		// Show categories around the selected one
-		startIdx = m.selectedCategory - maxCategories/2
-		if startIdx < 0 {
-			startIdx = 0
-		}
-		endIdx = startIdx + maxCategories
-		if endIdx > len(m.categories) {
-			endIdx = len(m.categories)
-			startIdx = endIdx - maxCategories
-			if startIdx < 0 {
-				startIdx = 0
-			}
-		}
-	}
-	
-	for i := startIdx; i < endIdx; i++ {
-		category := m.categories[i]
+	// Category list
+	for i, category := range m.categories {
 		if i == m.selectedCategory {
 			b.WriteString(dropdownItemSelectedStyle.Render("▶ " + category.Name))
 		} else {
-			b.WriteString("  " + category.Name)
+			b.WriteString(dropdownItemStyle.Render("  " + category.Name))
 		}
 		b.WriteString("\n")
 	}
 	
-	// Show scroll indicators if needed
-	if len(m.categories) > maxCategories {
-		if startIdx > 0 {
-			b.WriteString(helpStyle.Render("  ↑ More above") + "\n")
-		}
-		if endIdx < len(m.categories) {
-			b.WriteString(helpStyle.Render("  ↓ More below") + "\n")
-		}
-	}
-	
-	// Create popup with border
-	popupStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(colorPrimary).
-		Background(lipgloss.Color("#1a1a1a")).
-		Padding(1, 2).
-		Width(30) // Fixed reasonable width
-	
-	return popupStyle.Render(b.String())
+	// Create modal popup
+	return modalStyle.Render(b.String())
 }
 
-// overlayPopup overlays a popup on top of base content using proper layering
-func (m *AddTransactionModel) overlayPopup(baseContent, popup string, config CenterConfig) string {
-	// Simple approach: use lipgloss PlaceHorizontal and PlaceVertical for proper layering
-	
-	// First, place the base content normally
-	base := lipgloss.Place(config.Width, config.Height, 
-		lipgloss.Center, lipgloss.Center, baseContent)
-	
-	// Create a semi-transparent overlay effect by dimming colors in the base
-	dimmedBase := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#666666")).
-		Render(base)
-	
-	
-	// Position the popup exactly in center using proper coordinates
-	popupLines := strings.Split(popup, "\n")
-	baseLines := strings.Split(dimmedBase, "\n")
-	
-	// Ensure we have enough lines
-	for len(baseLines) < config.Height {
-		baseLines = append(baseLines, "")
-	}
-	
-	// Calculate popup position
-	popupHeight := len(popupLines)
-	startY := (config.Height - popupHeight) / 2
-	if startY < 0 { startY = 0 }
-	
-	// Overlay popup lines onto base, maintaining proper spacing
-	result := make([]string, len(baseLines))
-	copy(result, baseLines)
-	
-	popupWidth := 32 // Fixed width from createCategoryPopup
-	startX := (config.Width - popupWidth) / 2
-	if startX < 0 { startX = 0 }
-	
-	for i, popupLine := range popupLines {
-		if startY+i < len(result) && startY+i >= 0 {
-			// Replace the middle section of the base line with the popup line
-			baseLine := result[startY+i]
-			
-			// Pad or trim base line to config width
-			if len(baseLine) < config.Width {
-				baseLine += strings.Repeat(" ", config.Width-len(baseLine))
-			}
-			if len(baseLine) > config.Width {
-				baseLine = baseLine[:config.Width]
-			}
-			
-			// Insert popup line at center position
-			if len(popupLine) > 0 && startX+len(popupLine) <= len(baseLine) {
-				result[startY+i] = baseLine[:startX] + popupLine + baseLine[startX+len(popupLine):]
-			}
-		}
-	}
-	
-	return strings.Join(result, "\n")
-}

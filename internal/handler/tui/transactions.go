@@ -317,9 +317,8 @@ func (m *TransactionsModel) renderEnhancedTransactionTable() string {
 	
 	var b strings.Builder
 	
-	// Table header
+	// Table header with separator combined
 	tableHeader := CreateTableHeader(columns)
-	b.WriteString(tableHeader + "\n")
 	
 	// Calculate total width for separator
 	totalWidth := 0
@@ -327,8 +326,9 @@ func (m *TransactionsModel) renderEnhancedTransactionTable() string {
 		totalWidth += col.Width + 1 // +1 for space between columns
 	}
 	
-	// Separator
-	b.WriteString(CreateTableSeparator(totalWidth-1) + "\n")
+	// Combine header and separator on the same line
+	separator := CreateTableSeparator(totalWidth-1)
+	b.WriteString(tableHeader + "\n" + separator + "\n")
 	
 	// Transaction rows with alternating styles
 	for i, transaction := range m.transactions {
