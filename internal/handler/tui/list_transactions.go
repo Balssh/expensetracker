@@ -40,6 +40,10 @@ type ListTransactionsModel struct {
 	width  int
 	height int
 
+	// Responsive configuration
+	responsiveConfig *components.ResponsiveConfig
+	currentLayout    components.LayoutConfig
+
 	// Components
 	table             *components.Table
 	filterToggle      *components.Toggle
@@ -67,12 +71,16 @@ type ListTransactionsModel struct {
 
 // NewListTransactionsModel creates a new list transactions model
 func NewListTransactionsModel(transactionUseCase *usecase.TransactionUseCase, categoryUseCase *usecase.CategoryUseCase) *ListTransactionsModel {
+	responsiveConfig := components.NewResponsiveConfig()
+	
 	m := &ListTransactionsModel{
 		transactionUseCase: transactionUseCase,
 		categoryUseCase:    categoryUseCase,
 		categories:         make(map[int]*domain.Category),
 		currentFilter:      FilterAll,
 		currentDateRange:   DateRangeLast30Days,
+		responsiveConfig:   responsiveConfig,
+		currentLayout:      responsiveConfig.GetLayoutForWidth(80), // Default to standard layout
 	}
 
 	m.initializeComponents()
@@ -121,99 +129,22 @@ func (m *ListTransactionsModel) initializeComponents() {
 		SetWidth(25)
 }
 
-// adjustTableColumns dynamically adjusts column widths based on available screen width
+// adjustTableColumns dynamically adjusts column widths using responsive configuration
 func (m *ListTransactionsModel) adjustTableColumns(screenWidth int) {
-	// Calculate available width for table content (account for borders, padding, and margins)
-	availableWidth := screenWidth - 6 // 2 for borders, 2 for padding, 2 for margins
-	if availableWidth < 30 {
-		availableWidth = 30 // Minimum table width
-	}
-
+	// Update current layout based on screen width
+	m.currentLayout = m.responsiveConfig.GetLayoutForWidth(screenWidth)
+	
+	// Get current table columns
 	columns := m.table.Columns
 	if len(columns) == 0 {
 		return
 	}
-
-	// Calculate minimum total width needed
-	minTotalWidth := 0
-	for _, col := range columns {
-		minWidth := col.MinWidth
-		if minWidth == 0 {
-			minWidth = 5 // Fallback minimum
-		}
-		minTotalWidth += minWidth
-	}
-
-	// If screen is too narrow, use minimum widths
-	if availableWidth <= minTotalWidth {
-		for i := range columns {
-			minWidth := columns[i].MinWidth
-			if minWidth == 0 {
-				minWidth = 5
-			}
-			columns[i].Width = minWidth
-		}
-		m.table.SetColumns(columns)
-		return
-	}
-
-	// Calculate proportional widths based on preferred sizes
-	totalPreferredWidth := 0
-	for _, col := range columns {
-		totalPreferredWidth += col.Width
-	}
-
-	// Distribute available width proportionally
-	remaining := availableWidth
-	for i := range columns {
-		// Calculate proportional width
-		proportionalWidth := (columns[i].Width * availableWidth) / totalPreferredWidth
-		
-		// Ensure within min/max bounds
-		minWidth := columns[i].MinWidth
-		if minWidth == 0 {
-			minWidth = 5
-		}
-		maxWidth := columns[i].MaxWidth
-		if maxWidth == 0 || maxWidth > availableWidth/2 {
-			maxWidth = availableWidth / 2 // Prevent any column from taking more than half
-		}
-		
-		if proportionalWidth < minWidth {
-			proportionalWidth = minWidth
-		} else if proportionalWidth > maxWidth {
-			proportionalWidth = maxWidth
-		}
-		
-		columns[i].Width = proportionalWidth
-		remaining -= proportionalWidth
-	}
-
-	// Distribute any remaining width to the description column (most flexible)
-	if remaining > 0 && len(columns) > 3 {
-		descriptionIdx := -1
-		for i, col := range columns {
-			if col.Key == "description" {
-				descriptionIdx = i
-				break
-			}
-		}
-		if descriptionIdx >= 0 {
-			maxWidth := columns[descriptionIdx].MaxWidth
-			if maxWidth == 0 {
-				maxWidth = availableWidth / 2
-			}
-			additionalWidth := remaining
-			if columns[descriptionIdx].Width+additionalWidth > maxWidth {
-				additionalWidth = maxWidth - columns[descriptionIdx].Width
-			}
-			if additionalWidth > 0 {
-				columns[descriptionIdx].Width += additionalWidth
-			}
-		}
-	}
-
-	m.table.SetColumns(columns)
+	
+	// Use responsive config to adjust columns
+	adjustedColumns := m.responsiveConfig.AdjustTableColumns(columns, screenWidth, m.currentLayout)
+	
+	// Update table with adjusted columns
+	m.table.SetColumns(adjustedColumns)
 }
 
 // SetSize sets the size of the list transactions view
@@ -443,25 +374,29 @@ func (m *ListTransactionsModel) renderTransactionList() string {
 	tableView := m.table.View()
 	sections = append(sections, tableView)
 
-	// Help text (compact) - only if there's sufficient space
-	// Calculate the current total height and be very conservative
-	currentHeight := 1 + lipgloss.Height(filterSection) + lipgloss.Height(tableView)
-	appOverhead := 10 // Very conservative estimate to ensure no overflow
-	
-	// Only show help text if we have plenty of room AND the terminal is reasonably sized
-	if m.height > 20 && currentHeight < m.height-appOverhead {
-		helpStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("240"))
+	// Help text based on responsive configuration
+	if m.currentLayout.ShowHelp {
+		// Calculate the current total height and be conservative
+		currentHeight := 1 + lipgloss.Height(filterSection) + lipgloss.Height(tableView)
+		appOverhead := 10 // Conservative estimate to ensure no overflow
+		
+		// Only show help text if we have sufficient space
+		if m.height > 20 && currentHeight < m.height-appOverhead {
+			helpStyle := lipgloss.NewStyle().
+				Foreground(lipgloss.Color("240"))
 
-		var helpText string
-		if m.width < 60 {
-			helpText = "↵:Details Tab:Nav r:Refresh"
-		} else if m.width < 80 {
-			helpText = "↵: Details • Tab: Nav • r: Refresh • f: Filter"
-		} else {
-			helpText = "Enter: Details • Tab: Navigate • r: Refresh • f: Filter • /: Search"
+			var helpText string
+			breakpointName := m.responsiveConfig.GetBreakpointName(m.width)
+			switch breakpointName {
+			case "mobile":
+				helpText = "↵:Details Tab:Nav r:Refresh"
+			case "narrow":
+				helpText = "↵: Details • Tab: Nav • r: Refresh • f: Filter"
+			default: // standard, wide
+				helpText = "Enter: Details • Tab: Navigate • r: Refresh • f: Filter • /: Search"
+			}
+			sections = append(sections, helpStyle.Render(helpText))
 		}
-		sections = append(sections, helpStyle.Render(helpText))
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
@@ -495,16 +430,23 @@ func (m *ListTransactionsModel) renderFilterControls() string {
 		searchView = focusStyle.Render(searchView)
 	}
 
-	// Layout based on available width (more compact spacing)
+	// Layout based on responsive configuration
 	var filterRow string
-	if m.width < 80 {
+	switch m.currentLayout.FilterLayout {
+	case components.FilterLayoutVertical:
 		// Stack vertically on narrow screens
 		filterRow = lipgloss.JoinVertical(lipgloss.Left,
 			filterView,
 			dateView,
 			searchView,
 		)
-	} else {
+	case components.FilterLayoutCollapsed:
+		// Show only essential filters for very narrow screens
+		filterRow = lipgloss.JoinVertical(lipgloss.Left,
+			filterView,
+			searchView,
+		)
+	default: // FilterLayoutHorizontal
 		// Layout horizontally on wider screens
 		filterRow = lipgloss.JoinHorizontal(lipgloss.Top,
 			filterView, " ", // Single space instead of double
@@ -517,20 +459,15 @@ func (m *ListTransactionsModel) renderFilterControls() string {
 	return lipgloss.NewStyle().Margin(0, 0, 0, 0).Render(filterRow)
 }
 
-// adjustFilterComponentWidths adjusts the widths of filter components based on screen size
+// adjustFilterComponentWidths adjusts the widths of filter components using responsive configuration
 func (m *ListTransactionsModel) adjustFilterComponentWidths() {
-	if m.width < 60 {
-		// Very narrow screens
-		m.dateRangeDropdown.SetWidth(15)
-		m.searchInput.SetWidth(20)
-	} else if m.width < 80 {
-		// Narrow screens
-		m.dateRangeDropdown.SetWidth(18)
-		m.searchInput.SetWidth(25)
-	} else {
-		// Wide screens - use original widths
-		m.dateRangeDropdown.SetWidth(20)
-		m.searchInput.SetWidth(25)
+	// Use current layout's component width configuration
+	if dropdownWidth, exists := m.currentLayout.ComponentWidths["dropdown"]; exists {
+		m.dateRangeDropdown.SetWidth(dropdownWidth)
+	}
+	
+	if searchWidth, exists := m.currentLayout.ComponentWidths["search"]; exists {
+		m.searchInput.SetWidth(searchWidth)
 	}
 }
 
@@ -617,12 +554,15 @@ func (m *ListTransactionsModel) buildTransactionRows() []components.TableRow {
 			categoryName = category.Name
 		}
 
-		// Format amount with +/- prefix
+		// Format amount with +/- prefix and symbols for accessibility
 		amountText := tx.FormatAmount()
+		typeText := string(tx.Type)
 		if tx.Type == domain.TypeIncome {
 			amountText = "+" + amountText
+			typeText = "↗️ " + typeText
 		} else {
 			amountText = "-" + amountText
+			typeText = "↘️ " + typeText
 		}
 
 		// Determine colors
@@ -640,7 +580,7 @@ func (m *ListTransactionsModel) buildTransactionRows() []components.TableRow {
 			ID: tx.ID,
 			Data: map[string]interface{}{
 				"date":        tx.Date.Format("Jan 02"),
-				"type":        strings.Title(string(tx.Type)),
+				"type":        strings.Title(typeText),
 				"category":    categoryName,
 				"description": tx.Description,
 				"amount":      amountText,

@@ -14,88 +14,96 @@ type FormField interface {
 	IsValid() bool
 }
 
-// FormFieldWrapper wraps different field types to implement FormField interface
+// FormComponent interface for components that can be used in forms
+type FormComponent interface {
+	Focus()
+	Blur()
+	View() string
+	IsValid() bool
+}
+
+// FormFieldWrapper wraps any form component to implement FormField interface
 type FormFieldWrapper struct {
-	Input    *Input
-	Dropdown *Dropdown
-	Toggle   *Toggle
+	component FormComponent
+	updateFunc func(tea.Msg) (FormComponent, tea.Cmd)
+}
+
+// NewInputFieldWrapper creates a wrapper for Input components
+func NewInputFieldWrapper(input *Input) *FormFieldWrapper {
+	return &FormFieldWrapper{
+		component: input,
+		updateFunc: func(msg tea.Msg) (FormComponent, tea.Cmd) {
+			updatedInput, cmd := input.Update(msg)
+			return updatedInput, cmd
+		},
+	}
+}
+
+// NewDropdownFieldWrapper creates a wrapper for Dropdown components
+func NewDropdownFieldWrapper(dropdown *Dropdown) *FormFieldWrapper {
+	return &FormFieldWrapper{
+		component: dropdown,
+		updateFunc: func(msg tea.Msg) (FormComponent, tea.Cmd) {
+			updatedDropdown, cmd := dropdown.Update(msg)
+			return updatedDropdown, cmd
+		},
+	}
+}
+
+// NewToggleFieldWrapper creates a wrapper for Toggle components
+func NewToggleFieldWrapper(toggle *Toggle) *FormFieldWrapper {
+	return &FormFieldWrapper{
+		component: toggle,
+		updateFunc: func(msg tea.Msg) (FormComponent, tea.Cmd) {
+			updatedToggle, cmd := toggle.Update(msg)
+			return updatedToggle, cmd
+		},
+	}
 }
 
 // Focus implements FormField interface
 func (f *FormFieldWrapper) Focus() {
-	if f.Input != nil {
-		f.Input.Focus()
-	}
-	if f.Dropdown != nil {
-		f.Dropdown.Focus()
-	}
-	if f.Toggle != nil {
-		f.Toggle.Focus()
+	if f.component != nil {
+		f.component.Focus()
 	}
 }
 
 // Blur implements FormField interface
 func (f *FormFieldWrapper) Blur() {
-	if f.Input != nil {
-		f.Input.Blur()
-	}
-	if f.Dropdown != nil {
-		f.Dropdown.Blur()
-	}
-	if f.Toggle != nil {
-		f.Toggle.Blur()
+	if f.component != nil {
+		f.component.Blur()
 	}
 }
 
 // Update implements FormField interface
 func (f *FormFieldWrapper) Update(msg tea.Msg) (FormField, tea.Cmd) {
-	var cmd tea.Cmd
-	
-	if f.Input != nil {
-		var updatedInput *Input
-		updatedInput, cmd = f.Input.Update(msg)
-		f.Input = updatedInput
+	if f.component != nil && f.updateFunc != nil {
+		updatedComponent, cmd := f.updateFunc(msg)
+		f.component = updatedComponent
+		return f, cmd
 	}
-	if f.Dropdown != nil {
-		var updatedDropdown *Dropdown
-		updatedDropdown, cmd = f.Dropdown.Update(msg)
-		f.Dropdown = updatedDropdown
-	}
-	if f.Toggle != nil {
-		var updatedToggle *Toggle
-		updatedToggle, cmd = f.Toggle.Update(msg)
-		f.Toggle = updatedToggle
-	}
-	
-	return f, cmd
+	return f, nil
 }
 
 // View implements FormField interface
 func (f *FormFieldWrapper) View() string {
-	if f.Input != nil {
-		return f.Input.View()
-	}
-	if f.Dropdown != nil {
-		return f.Dropdown.View()
-	}
-	if f.Toggle != nil {
-		return f.Toggle.View()
+	if f.component != nil {
+		return f.component.View()
 	}
 	return ""
 }
 
 // IsValid implements FormField interface
 func (f *FormFieldWrapper) IsValid() bool {
-	if f.Input != nil {
-		return f.Input.IsValid()
-	}
-	if f.Dropdown != nil {
-		return f.Dropdown.IsValid()
-	}
-	if f.Toggle != nil {
-		return f.Toggle.IsValid()
+	if f.component != nil {
+		return f.component.IsValid()
 	}
 	return true
+}
+
+// GetComponent returns the underlying component (for type-specific operations)
+func (f *FormFieldWrapper) GetComponent() FormComponent {
+	return f.component
 }
 
 // Form represents a form with multiple fields
@@ -155,19 +163,19 @@ func (f *Form) AddField(field FormField) *Form {
 
 // AddInput adds an input field to the form
 func (f *Form) AddInput(input *Input) *Form {
-	wrapper := &FormFieldWrapper{Input: input}
+	wrapper := NewInputFieldWrapper(input)
 	return f.AddField(wrapper)
 }
 
 // AddDropdown adds a dropdown field to the form
 func (f *Form) AddDropdown(dropdown *Dropdown) *Form {
-	wrapper := &FormFieldWrapper{Dropdown: dropdown}
+	wrapper := NewDropdownFieldWrapper(dropdown)
 	return f.AddField(wrapper)
 }
 
 // AddToggle adds a toggle field to the form
 func (f *Form) AddToggle(toggle *Toggle) *Form {
-	wrapper := &FormFieldWrapper{Toggle: toggle}
+	wrapper := NewToggleFieldWrapper(toggle)
 	return f.AddField(wrapper)
 }
 
@@ -215,8 +223,10 @@ func (f *Form) GetField(index int) FormField {
 // GetInput returns an input field by index
 func (f *Form) GetInput(index int) *Input {
 	if field := f.GetField(index); field != nil {
-		if wrapper, ok := field.(*FormFieldWrapper); ok && wrapper.Input != nil {
-			return wrapper.Input
+		if wrapper, ok := field.(*FormFieldWrapper); ok {
+			if input, ok := wrapper.GetComponent().(*Input); ok {
+				return input
+			}
 		}
 	}
 	return nil
@@ -225,8 +235,10 @@ func (f *Form) GetInput(index int) *Input {
 // GetDropdown returns a dropdown field by index
 func (f *Form) GetDropdown(index int) *Dropdown {
 	if field := f.GetField(index); field != nil {
-		if wrapper, ok := field.(*FormFieldWrapper); ok && wrapper.Dropdown != nil {
-			return wrapper.Dropdown
+		if wrapper, ok := field.(*FormFieldWrapper); ok {
+			if dropdown, ok := wrapper.GetComponent().(*Dropdown); ok {
+				return dropdown
+			}
 		}
 	}
 	return nil
@@ -235,8 +247,10 @@ func (f *Form) GetDropdown(index int) *Dropdown {
 // GetToggle returns a toggle field by index
 func (f *Form) GetToggle(index int) *Toggle {
 	if field := f.GetField(index); field != nil {
-		if wrapper, ok := field.(*FormFieldWrapper); ok && wrapper.Toggle != nil {
-			return wrapper.Toggle
+		if wrapper, ok := field.(*FormFieldWrapper); ok {
+			if toggle, ok := wrapper.GetComponent().(*Toggle); ok {
+				return toggle
+			}
 		}
 	}
 	return nil

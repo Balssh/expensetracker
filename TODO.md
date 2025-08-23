@@ -12,10 +12,13 @@
 - 🔄 Full navigation system with keyboard shortcuts
 - 📱 Responsive TUI interface with Bubble Tea
 - 🏷️ Default categories seeded automatically
+- 📝 Complete transaction list view with filtering, search, and responsive design
+- ⚙️ Advanced layout management for various terminal sizes
 
-**Current State:** Application builds and runs successfully with a functional dashboard view.
+**Current State:** Application builds and runs successfully with a functional dashboard and complete transaction list view that handles responsive layouts, filtering, search, and keyboard navigation.
 
-**Next Priority:** Implement Add Transaction form in Phase 6 for full transaction management.
+**Current Status:** List Transactions view fully implemented with responsive design, filtering, search, and navigation.
+**Next Priority:** Implement Add Transaction form and complete edit/delete functionality for full transaction management.
 
 ## Phase 1: Foundation (Core Setup) ✅ COMPLETED
 - [x] Initialize Go module (`go mod init github.com/yourusername/expense-tracker`)
@@ -131,7 +134,7 @@
   - [x] Context-aware help text
   - [x] View switching
 
-## Phase 6: TUI Views - Core 🚧 IN PROGRESS
+## Phase 6: TUI Views - Core 🔄 MAJOR PROGRESS
 - [x] Dashboard implemented (main menu functionality):
   - [x] Monthly summary with income/expense/balance
   - [x] Recent transactions display
@@ -149,12 +152,22 @@
   - [ ] Input validation with real-time feedback
   - [ ] Success confirmation with transaction details
   - [ ] Quick-add another option
-- [ ] Implement `internal/handler/tui/list_transactions.go`:
-  - [ ] Table view with color coding (green for income, red for expense)
-  - [ ] Filters for type (All/Income/Expense)
-  - [ ] Date range filter
-  - [ ] Pagination controls
-  - [ ] Sort options (date, amount, type)
+- [x] Implement `internal/handler/tui/list_transactions.go`:
+  - [x] Table view with color coding (green for income, red for expense)
+  - [x] Filters for type (All/Income/Expense)
+  - [x] Date range filter (All Time, Last 30/90 Days, This/Last Month)
+  - [x] Search functionality for transaction descriptions
+  - [x] Pagination controls (10 transactions per page)
+  - [x] Sort options (date, amount, type, category)
+  - [x] Transaction details view (Enter key)
+  - [x] Focus navigation with Tab/Shift+Tab
+  - [x] Responsive layout that adapts to terminal size (50+ chars wide)
+  - [x] Keyboard shortcuts (r: refresh, f: filter, /: search)
+  - [x] Dynamic column width calculation with proportional distribution
+  - [x] Compact styling to maximize content within available space
+  - [x] Smart help text visibility based on available screen space
+  - [x] Vertical filter layout for narrow screens (<80 chars)
+  - [x] Focus cycling that keeps all elements within screen bounds
   - [ ] Quick actions (edit, delete) with confirmation
   - [ ] Running balance column
 

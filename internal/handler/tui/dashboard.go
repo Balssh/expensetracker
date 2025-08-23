@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -112,27 +113,35 @@ func (m *DashboardModel) renderSummary() string {
 	incomeCard := cardStyle.Copy().
 		BorderForeground(lipgloss.Color("46")).
 		Render(lipgloss.JoinVertical(lipgloss.Center,
-			lipgloss.NewStyle().Foreground(lipgloss.Color("46")).Bold(true).Render("Income"),
-			fmt.Sprintf("$%.2f", m.monthlyIncome),
+			lipgloss.NewStyle().Foreground(lipgloss.Color("46")).Bold(true).Render("↗️ Income"),
+			fmt.Sprintf("+$%.2f", m.monthlyIncome),
 		))
 	
 	expenseCard := cardStyle.Copy().
 		BorderForeground(lipgloss.Color("196")).
 		Render(lipgloss.JoinVertical(lipgloss.Center,
-			lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true).Render("Expenses"),
-			fmt.Sprintf("$%.2f", m.monthlyExpense),
+			lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true).Render("↘️ Expenses"),
+			fmt.Sprintf("-$%.2f", m.monthlyExpense),
 		))
 	
 	balanceColor := "46" // Green for positive
+	balanceSymbol := "📈"
+	balancePrefix := "+"
 	if m.monthlyBalance < 0 {
 		balanceColor = "196" // Red for negative
+		balanceSymbol = "📉"
+		balancePrefix = "-"
+	} else if m.monthlyBalance == 0 {
+		balanceColor = "240" // Gray for zero
+		balanceSymbol = "⚖️"
+		balancePrefix = ""
 	}
 	
 	balanceCard := cardStyle.Copy().
 		BorderForeground(lipgloss.Color(balanceColor)).
 		Render(lipgloss.JoinVertical(lipgloss.Center,
-			lipgloss.NewStyle().Foreground(lipgloss.Color(balanceColor)).Bold(true).Render("Balance"),
-			fmt.Sprintf("$%.2f", m.monthlyBalance),
+			lipgloss.NewStyle().Foreground(lipgloss.Color(balanceColor)).Bold(true).Render(balanceSymbol+" Balance"),
+			fmt.Sprintf("%s$%.2f", balancePrefix, abs(m.monthlyBalance)),
 		))
 	
 	cards := lipgloss.JoinHorizontal(lipgloss.Top, incomeCard, expenseCard, balanceCard)
@@ -170,7 +179,7 @@ func (m *DashboardModel) renderRecentTransactions() string {
 		Bold(true).
 		Underline(true)
 	
-	header := fmt.Sprintf("%-12s %-8s %-20s %s",
+	header := fmt.Sprintf("%-12s %-12s %-20s %s",
 		"Date", "Type", "Description", "Amount")
 	rows = append(rows, headerStyle.Render(header))
 	
@@ -181,13 +190,15 @@ func (m *DashboardModel) renderRecentTransactions() string {
 		
 		typeColor := "46" // Green for income
 		amountPrefix := "+"
+		typeSymbol := "↗️"
 		if tx.Type == domain.TypeExpense {
 			typeColor = "196" // Red for expense
 			amountPrefix = "-"
+			typeSymbol = "↘️"
 		}
 		
 		dateStr := tx.Date.Format("Jan 02")
-		typeStr := string(tx.Type)
+		typeStr := typeSymbol + " " + string(tx.Type)
 		description := tx.Description
 		if len(description) > 20 {
 			description = description[:17] + "..."
@@ -196,7 +207,7 @@ func (m *DashboardModel) renderRecentTransactions() string {
 		
 		amountStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(typeColor))
 		
-		row := fmt.Sprintf("%-12s %-8s %-20s %s",
+		row := fmt.Sprintf("%-12s %-12s %-20s %s",
 			dateStr, typeStr, description, amountStyle.Render(amountStr))
 		
 		rows = append(rows, row)
@@ -298,4 +309,9 @@ type recentTransactionsLoadedMsg struct {
 
 type dataLoadErrorMsg struct {
 	error string
+}
+
+// abs returns the absolute value of a float64
+func abs(x float64) float64 {
+	return math.Abs(x)
 }
