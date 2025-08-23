@@ -6,77 +6,7 @@ import (
 	"github.com/yourusername/expense-tracker/internal/core/usecase"
 )
 
-// AddTransactionModel - stub implementation
-type AddTransactionModel struct {
-	transactionUseCase *usecase.TransactionUseCase
-	categoryUseCase    *usecase.CategoryUseCase
-	width              int
-	height             int
-}
 
-func NewAddTransactionModel(transactionUseCase *usecase.TransactionUseCase, categoryUseCase *usecase.CategoryUseCase) *AddTransactionModel {
-	return &AddTransactionModel{
-		transactionUseCase: transactionUseCase,
-		categoryUseCase:    categoryUseCase,
-	}
-}
-
-func (m *AddTransactionModel) SetSize(width, height int) {
-	m.width = width
-	m.height = height
-}
-
-func (m *AddTransactionModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m *AddTransactionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return m, nil
-}
-
-func (m *AddTransactionModel) View() string {
-	style := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("39")).
-		Margin(2, 0)
-	
-	return style.Render("Add Transaction view - Coming soon!\nPress ESC to return to dashboard.")
-}
-
-// ListTransactionsModel - stub implementation  
-type ListTransactionsModel struct {
-	transactionUseCase *usecase.TransactionUseCase
-	categoryUseCase    *usecase.CategoryUseCase
-	width              int
-	height             int
-}
-
-func NewListTransactionsModel(transactionUseCase *usecase.TransactionUseCase, categoryUseCase *usecase.CategoryUseCase) *ListTransactionsModel {
-	return &ListTransactionsModel{
-		transactionUseCase: transactionUseCase,
-		categoryUseCase:    categoryUseCase,
-	}
-}
-
-func (m *ListTransactionsModel) SetSize(width, height int) {
-	m.width = width
-	m.height = height
-}
-
-func (m *ListTransactionsModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m *ListTransactionsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return m, nil
-}
-
-func (m *ListTransactionsModel) View() string {
-	style := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("39")).
-		Margin(2, 0)
-	
-	return style.Render("List Transactions view - Coming soon!\nPress ESC to return to dashboard.")
-}
 
 // CategoriesModel - stub implementation
 type CategoriesModel struct {

@@ -128,6 +128,40 @@ For incomes:
 4. Build TUI interface
 5. Manual testing of user flow
 
+### Make Commands
+The project includes a comprehensive Makefile for common development tasks:
+
+#### Building
+- `make build` - Build the application binary to `bin/` directory
+- `make build-all` - Cross-compile for Linux, macOS, and Windows
+- `make install` - Install binary to `$GOPATH/bin`
+
+#### Development
+- `make run` - Build and run the application
+- `make dev` - Run in development mode (no binary creation)
+- `make clean` - Remove build artifacts
+
+#### Code Quality
+- `make fmt` - Format code and tidy Go modules
+- `make lint` - Run golangci-lint (installs if needed)
+- `make vet` - Run go vet
+- `make quality` - Run all quality checks (fmt, vet, lint, test)
+
+#### Testing
+- `make test` - Run all tests
+- `make test-coverage` - Run tests with HTML coverage report
+
+#### Dependencies
+- `make deps` - Install and tidy dependencies
+- `make update-deps` - Update all dependencies to latest versions
+- `make install-tools` - Install development tools
+
+#### Security
+- `make audit` - Run security vulnerability audit
+
+#### Utilities
+- `make help` - Show all available commands
+
 ## Resources
 - [Bubble Tea Documentation](https://github.com/charmbracelet/bubbletea)
 - [Effective Go](https://go.dev/doc/effective_go)

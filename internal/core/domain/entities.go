@@ -9,6 +9,11 @@ import (
 	"github.com/google/uuid"
 )
 
+// Common validation errors
+var (
+	ErrFutureDate = errors.New("date cannot be in the future")
+)
+
 // TransactionType represents the type of transaction (income or expense)
 type TransactionType string
 
